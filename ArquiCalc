@@ -1,10 +1,450 @@
 .data  ; Segmento de datos
 
+PUERTO_ENTRADA equ 10
+PUERTO_LOG_DEFECTO equ 2
+PUERTO_SALIDA_DEFECTO equ 1
+
+salir dw 0
+topePila dw -2 ; se encarga de contar cuantos elementos hay en la pila, -2='pila vacia', 0='un elemento', 2='2 elementos', 4='3 elementos' 
+puertoBitacora dw PUERTO_LOG_DEFECTO
+puertoSalida dw PUERTO_SALIDA_DEFECTO
+
 .code  ; Segmento de código
 
-.ports ; Definición de puertos
-; 200: 1,2,3  ; Ejemplo puerto simple
-; 201:(100h,10),(200h,3),(?,4)  ; Ejemplo puerto PDDV
+;mov byte ptr [puertoBitacora], PUERTO_LOG_DEFECTO
+;mov byte ptr [puertoSalida], PUERTO_SALIDA_DEFECTO
+
+jmp while
+
+normalizarAXBX proc;calcula el valor absoluto de ax y bx y devuelve en cx el signo de ax*bx (0='+' y 1='-')
+
+	cmp ax, 0
+	jl axNegativo
+		cmp bx, 0
+		jl bxNegativo
+			mov cx, 0
+			ret
+		bxNegativo:
+			mov cx, 1
+			neg bx
+			ret
+	axNegativo:
+		neg ax
+		cmp bx, 0
+		jl bxYaxNegativo
+			mov cx, 1
+			ret
+		bxYaxNegativo:
+			mov cx, 0
+			neg bx
+			ret
+
+normalizarAXBX endp
+
+jmp while
+loopWhile:
+
+mov dx, [puertoBitacora]
+mov ax, 0
+out dx, ax
+in ax, PUERTO_ENTRADA
+out dx, ax
+
+cmp ax, 0x01;implementacion de un 'suitch'
+jz case1
+cmp ax, 0x02
+jz case2
+cmp ax, 0x03
+jz case3
+cmp ax, 0x04
+jz case4
+cmp ax, 0x05
+jz case5
+cmp ax, 0x06
+jz case6
+cmp ax, 0x07
+jz case7
+cmp ax, 0x08
+jz case8
+cmp ax, 0x09
+jz case9
+cmp ax, 0x0A
+jz case10
+cmp ax, 0x0B
+jz case11
+cmp ax, 0x0C
+jz case12
+cmp ax, 0x0D
+jz case13
+cmp ax, 0x0E
+jz case14
+cmp ax, 0x0F
+jz case15
+cmp ax, 0x10
+jz case16
+cmp ax, 0x11
+jz case17
+cmp ax, 0x12
+jz case18
+cmp ax, 0x13
+jz case19
+
+cmp ax, 0xFF
+jz caseSalir
+
+jmp default
+
+pilaVacia:; cuando la pila esta vacia saca un 8 por puerto bitacora, CAMBIO tambien cuando no hay suficientes operandos
+
+	cmp word ptr [topePila], -2
+	jz pilaVaciaVacia
+	pop ax
+	sub word ptr [topePila], 2
+	
+	pilaVaciaVacia:
+	mov dx, [puertoBitacora]
+	mov ax, 0x08
+	out dx, ax
+
+jmp while
+
+pilaLlena:; cuando la pila esta llena saca un 4 por puerto bitacora
+
+	mov dx, [puertoBitacora]
+	mov ax, 0x04
+	out dx, ax
+
+jmp while
+
+exitoOperacion:; 16 en bitacora cuando termina exitosamente la operacion
+
+	mov dx, [puertoBitacora]
+	mov ax, 0x10
+	out dx, ax
+
+jmp while
+
+case1:; codigo case 1
+
+	in ax, PUERTO_ENTRADA
+	out dx, ax
+	cmp word ptr [topePila], 62
+	jz pilaLlena
+
+	add word ptr [topePila], 2
+	push ax
+
+jmp exitoOperacion
+
+case2:; codigo case 2
+
+	in ax, PUERTO_ENTRADA
+	out dx, ax
+	mov [puertoSalida], ax
+
+jmp exitoOperacion
+
+case3:; codigo case 3
+
+	in ax, PUERTO_ENTRADA
+	out dx, ax
+	mov [puertoBitacora], ax
+
+jmp exitoOperacion
+
+case4:; codigo case 4
+
+	cmp word ptr [topePila], -2
+	jz pilaVacia
+
+	mov bp, sp
+	mov ax, [bp]
+	mov dx, [puertoSalida]
+	out dx, ax
+
+jmp exitoOperacion
+
+case5:; codigo case 5
+
+	cmp word ptr [topePila], -2
+	jz pilaVacia
+
+	mov cx, word ptr [topePila]
+	mov cx, -2
+	mov bp, sp
+	sub bp, 2
+	mov dx, [puertoSalida]
+	inicioForCase5:; 'for' que recorre el stack
+		add cx, 2
+		add bp, 2
+		mov ax, [bp]
+		out dx, ax
+
+	cmp cx, word ptr [topePila]
+	jnz inicioForCase5
+
+jmp exitoOperacion
+
+case6:; codigo case 6
+
+	cmp word ptr [topePila], -2
+	jz pilaVacia
+
+	cmp word ptr [topePila], 62
+	jz pilaLlena
+	
+	mov bp, sp
+	mov ax, [bp]
+	push ax
+	add word ptr [topePila], 2
+
+jmp exitoOperacion
+
+case7:; codigo case 7
+	
+	cmp word ptr [topePila], 0
+	jle pilaVacia
+
+	pop ax
+	pop bx
+	push ax
+	push bx
+	
+jmp exitoOperacion
+
+case8:; codigo case 8
+
+	cmp word ptr [topePila], -2
+	jz pilaVacia
+
+	pop ax
+	neg ax
+	push ax
+
+jmp exitoOperacion
+
+case9:; codigo case 9
+
+	cmp word ptr [topePila], -2
+	jz pilaVacia
+
+	mov bp, sp
+	mov ax, 1
+	mov cx, 1
+	forCase9:
+
+		mul cx
+		inc cx
+	
+	cmp cx, [bp]
+	jle forCase9
+	pop bx
+	push ax
+	
+jmp exitoOperacion
+
+case10:; codigo case 10
+
+	mov ax, 0
+	cmp word ptr [topePila], -2
+	jz pilaVaciaCase10
+	forCase10:
+		pop bx
+		add ax, bx
+		sub word ptr [topePila], 2
+	cmp word ptr [topePila], -2
+	jg forCase10
+	pilaVaciaCase10:
+	mov word ptr [topePila], 0
+	push ax
+
+jmp exitoOperacion
+
+case11:; codigo case 11
+
+	cmp word ptr [topePila], 0
+	jle pilaVacia
+	
+	pop bx
+	pop ax
+	add ax,bx
+	sub word ptr [topePila], 2
+	push ax
+
+jmp exitoOperacion
+
+case12:; codigo case 12
+
+	cmp word ptr [topePila], 0
+	jle pilaVacia
+	
+	pop bx
+	pop ax
+	sub ax,bx
+	sub word ptr [topePila], 2
+	push ax
+
+jmp exitoOperacion
+
+case13:; codigo case 13
+
+	cmp word ptr [topePila], 0
+	jle pilaVacia
+	
+	pop bx
+	pop ax
+
+	call normalizarAXBX
+
+	mul bx
+
+	cmp cx,1
+	je negCaso13
+	jmp finCaso13
+
+	negCaso13:
+
+		neg ax
+
+	finCaso13:
+
+	sub word ptr [topePila], 2
+	push ax
+
+jmp exitoOperacion
+
+case14:; codigo case 14
+
+	cmp word ptr [topePila], 0
+	jle pilaVacia
+	
+	pop bx
+	pop ax
+
+	call normalizarAXBX
+
+	mov dx, 0
+	div bx
+
+	cmp cx,1
+	je negCaso14
+	jmp finCaso14
+
+	negCaso14:
+
+		neg ax
+
+	finCaso14:
+	
+	sub word ptr [topePila], 2
+	push ax
+
+jmp exitoOperacion
+
+case15:; codigo case 15
+
+	cmp word ptr [topePila], 0
+	jle pilaVacia
+	
+	pop bx
+	pop ax
+
+	call normalizarAXBX
+
+	mov dx, 0
+	div bx
+
+	cmp cx,1
+	je negCaso15
+	jmp finCaso15
+
+	negCaso15:
+
+		neg ax
+
+	finCaso15:
+
+	sub word ptr [topePila], 2
+	push dx
+
+jmp exitoOperacion
+
+case16:; codigo case 16
+
+	cmp word ptr [topePila], 0
+	jle pilaVacia
+	
+	pop bx
+	pop ax
+	and ax,bx
+	sub word ptr [topePila], 2
+	push ax
+
+jmp exitoOperacion
+
+case17:; codigo case 17
+
+	cmp word ptr [topePila], 0
+	jle pilaVacia
+	
+	pop bx
+	pop ax
+	or ax,bx
+	sub word ptr [topePila], 2
+	push ax
+
+jmp exitoOperacion
+
+case18:; codigo case 18
+
+	cmp word ptr [topePila], 0
+	jle pilaVacia
+	
+	pop bx
+	pop ax
+	mov cl, bl
+	shl ax,cl
+	sub word ptr [topePila], 2
+	push ax
+
+jmp exitoOperacion
+
+case19:; codigo case 19
+
+	cmp word ptr [topePila], 0
+	jle pilaVacia
+	
+	pop bx
+	pop ax
+	mov cl, bl
+	shr ax,cl
+	sub word ptr [topePila], 2
+	push ax
+
+jmp exitoOperacion
+
+caseSalir:
+
+mov ax, 1
+mov [salir], ax
+
+jmp while
+
+default:
+
+mov ax, 0x02
+out dx, ax
+
+jmp while
+
+while:
+mov ax, [salir]
+cmp ax, 0
+jz loopWhile
+
+.ports
+PUERTO_ENTRADA: 1,1, 1,2, 1,3, 9, 5, 2,3, 9, 5, 3,4, 7, 9, 5, 999, -999, 2,5, 5, 254, 1,-6, 1,2, 14, 4, 1,-2, 13, 4, 255; puerto entrada
+
 
 .interrupts ; Manejadores de interrupciones
 ; Ejemplo interrupcion del timer

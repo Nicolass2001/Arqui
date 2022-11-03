@@ -2,7 +2,8 @@
 
 int main(){
     const int PUERTO_LOG_DEFECTO = 0, PUERTO_SALIDA_DEFECTO = 0;
-    int salir = 0, entrada, pila[32], topePila = -1, bitacora[200], topeBitacora = -1, puertoBitacora = PUERTO_LOG_DEFECTO, puertoSalida = PUERTO_SALIDA_DEFECTO, auxA, auxB;
+    int salir = 0, entrada, pila[32], topePila = -1, bitacora[200], 
+    topeBitacora = -1, puertoBitacora = PUERTO_LOG_DEFECTO, puertoSalida = PUERTO_SALIDA_DEFECTO, auxA, auxB;
     while (!salir)
     {   
         scanf("%X", &entrada);
@@ -33,12 +34,16 @@ int main(){
             scanf("%X", &entrada);
             puertoSalida = entrada;
             topeBitacora++;
+            bitacora[topeBitacora] = entrada;
+            topeBitacora++;
             bitacora[topeBitacora] = 0x10;
             break;
 
         case 0x03:
             scanf("%X", &entrada);
             puertoBitacora = entrada;
+            topeBitacora++;
+            bitacora[topeBitacora] = entrada;
             topeBitacora++;
             bitacora[topeBitacora] = 0x10;
             break;
